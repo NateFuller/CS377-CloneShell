@@ -94,7 +94,7 @@ int main() {
 					exit(0);
 				} else {
 					printf("PARENT: %d Waiting for all children to terminate.\n", child_pid);
-					waitpid(-1, NULL, 0);
+					wait(NULL);
 					printf("PARENT: %d Terminating.\n", child_pid);
 					exit(0);
 				}
@@ -104,19 +104,17 @@ int main() {
 				pid_t child_pid;
 
 				for (i = 0; i < count; i++) {
-					if ((child_pid = fork()) < 0) {
+					if ((child_pid = fork()) < 0) { // err
 						fprintf(stderr, "ERR: Something went wrong when forking.");
 						exit(1);
 					}
-					else if (child_pid == 0) {
-						printf("CHILD: Process number %d with pid %d executing line 1.\n", i + 1, getpid());
-						printf("CHILD: Process number %d with pid %d executing line 2.\n", i + 1, getpid());
-						exit(0);
-					} else {
-						printf("PARENT: Waiting for children to finish execution.\n");
-						waitpid(-1, NULL, 0);
+					else if (child_pid == 0) { // have child process do work then exit immediately
+						execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
+						printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
+						exit(1);
+					} else { // wait for child to finish
+						wait(NULL);
 					}
-
 				}
 				
 				printf("PARENT: Terminating.\n");
