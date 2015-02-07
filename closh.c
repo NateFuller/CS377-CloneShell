@@ -1,5 +1,5 @@
 // closh.c - CS 377, Spring 2015
-// YOUR NAME HERE
+// Nathan Fuller
 
 #include <stdio.h>
 #include <unistd.h>

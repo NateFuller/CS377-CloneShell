@@ -1,4 +1,6 @@
 ._Makefile
 ._sleephello
 .vagrant/
+closh.o
+closh
 Vagrantfile
