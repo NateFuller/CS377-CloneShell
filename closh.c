@@ -11,6 +11,8 @@
 #define TRUE 1
 #define FALSE 0
 
+pid_t child_pid = -1;
+
 // tokenize the command string into arguments - do not modify
 void readCmdTokens(char* cmd, char** cmdTokens) {
 	cmd[strlen(cmd) - 1] = '\0'; // drop trailing newline
@@ -26,6 +28,11 @@ char readChar() {
 	char c = getchar();
 	while (getchar() != '\n');
 	return c;
+}
+
+static void timeout_kill(int signo) {
+	printf("Signal called! Killing child: %d\n",child_pid);
+    kill(child_pid,SIGKILL);
 }
 
 // main method - program entry point
@@ -101,8 +108,7 @@ int main() {
 				
 			} else { // handle sequential execution
 				int i;
-				pid_t child_pid;
-
+				signal(SIGALRM, (void (*)(int))timeout_kill);
 				for (i = 0; i < count; i++) {
 					if ((child_pid = fork()) < 0) { // err
 						fprintf(stderr, "ERR: Something went wrong when forking.");
@@ -113,6 +119,7 @@ int main() {
 						printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
 						exit(1);
 					} else { // wait for child to finish
+						alarm(timeout);
 						wait(NULL);
 					}
 				}
