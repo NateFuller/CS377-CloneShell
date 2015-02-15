@@ -1,5 +1,9 @@
 // closh.c - CS 377, Spring 2015
-// Nathan Fuller
+/******************************************************************
+ * Project : Closh                                                        
+ * Author :  Nathan Fuller (UMASS ID: 26506886)
+ * Author :  Daniel Laizer (UMASS ID: 27616321)         
+*******************************************************************/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -44,6 +48,9 @@ int main() {
 	int parallel; // whether to run in parallel or sequentially
 	int timeout; // max seconds to run set of commands (parallel) or each command (sequentially)
 
+
+	signal(SIGALRM, (void (*)(int))timeout_kill);
+
 	while (TRUE) { // main shell input loop
 
 		// begin parsing code - do not modify
@@ -66,7 +73,6 @@ int main() {
 		} while (timeout < 0 || timeout > 9);
 		// end parsing code
 
-
 		////////////////////////////////////////////////////////
 		//                                                    //
 		// TODO: use cmdTokens, count, parallel, and timeout  //
@@ -77,38 +83,33 @@ int main() {
 		// just executes the given command once - REPLACE THIS CODE WITH YOUR OWN
 
 		int DEBUG = 1;
-
 		if (DEBUG) { // My code
 
 			if (parallel) { // handle concurrent execution
-				int i;
-				pid_t child_pid = fork(); // create first child
-				for (i = 0; i < count - 1; i++) {
-					if (child_pid < 0){ // err
+				int i, j;
+				pid_t pids[count];
+				
+				for (i = 0; i < count; i++) {
+					pids[i] = fork();
+					if (pids[i] == 0) {
+						printf("CHILD: %d forked with PARENT ID: %d\n", getpid(), getppid());
+						alarm(timeout);
+						execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
+						printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
+						exit(1);
+					} else if (pids[i] < 0){ // err
 						fprintf(stderr, "ERR: Something went wrong while forking children.\n");
 						exit(1);
 					}
-					else if (child_pid == 0)
-						break; // get child out of the loop so it can immediate move onto doing work
-					else { // make parent fork the rest of the children
-						child_pid = fork();
+				}
+				for (j = 0; j < count; j++) {
+					if (pids[j] > 0) {
+						waitpid(pids[j], NULL, 0);
 					}
 				}
-				
-				if (child_pid == 0) { // do child pid work concurrently
-					printf("CHILD: Process ID %d executing line 1.\n", getpid());
-					printf("CHILD: Process ID %d executing line 2.\n", getpid());
-					exit(0);
-				} else {
-					printf("PARENT: %d Waiting for all children to terminate.\n", child_pid);
-					wait(NULL);
-					printf("PARENT: %d Terminating.\n", child_pid);
-					exit(0);
-				}
-				
 			} else { // handle sequential execution
 				int i;
-				signal(SIGALRM, (void (*)(int))timeout_kill);
+				//signal(SIGALRM, (void (*)(int))timeout_kill);
 				for (i = 0; i < count; i++) {
 					if ((child_pid = fork()) < 0) { // err
 						fprintf(stderr, "ERR: Something went wrong when forking.");
@@ -120,12 +121,10 @@ int main() {
 						exit(1);
 					} else { // wait for child to finish
 						alarm(timeout);
-						wait(NULL);
+						waitpid(-1, NULL, 0);
 					}
 				}
-				
-				printf("PARENT: Terminating.\n");
-				exit(0);
+				alarm(0);
 			}
 		} else { // Original code
 			execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
