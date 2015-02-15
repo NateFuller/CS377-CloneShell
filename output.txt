@@ -1,0 +1,67 @@
+vagrant@precise32:/vagrant/Clone Shell$ ./closh
+closh> ./sleephello 
+  count> 5
+  [p]arallel or [s]equential> p
+  timeout> 1
+CHILD: 1416 forked with PARENT ID: 1413
+CHILD: 1418 forked with PARENT ID: 1413
+CHILD: 1415 forked with PARENT ID: 1413
+CHILD: 1417 forked with PARENT ID: 1413
+CHILD: 1414 forked with PARENT ID: 1413
+closh> 
+===============================================
+===============================================
+closh> ./sleephello
+  count> 7
+  [p]arallel or [s]equential> p
+  timeout> 4
+CHILD: 1430 forked with PARENT ID: 1413
+CHILD: 1431 forked with PARENT ID: 1413
+CHILD: 1428 forked with PARENT ID: 1413
+CHILD: 1429 forked with PARENT ID: 1413
+CHILD: 1426 forked with PARENT ID: 1413
+CHILD: 1427 forked with PARENT ID: 1413
+CHILD: 1425 forked with PARENT ID: 1413
+Hello World
+Hello World
+Hello World
+Hello World
+Hello World
+Hello World
+Hello World
+closh> 
+===============================================
+===============================================
+closh> ./sleephello
+  count> 5
+  [p]arallel or [s]equential> s
+  timeout> 4
+CHILD: 1439 forked with PARENT ID: 1413
+Hello World
+CHILD: 1441 forked with PARENT ID: 1413
+Hello World
+CHILD: 1443 forked with PARENT ID: 1413
+Hello World
+CHILD: 1445 forked with PARENT ID: 1413
+Hello World
+CHILD: 1447 forked with PARENT ID: 1413
+Hello World
+closh> 
+===============================================
+===============================================
+closh> this_wont_work
+  count> 4 
+  [p]arallel or [s]equential> s
+  timeout> 1
+CHILD: 1450 forked with PARENT ID: 1413
+CHILD: 1450 can't execute this_wont_work
+CHILD: 1451 forked with PARENT ID: 1413
+CHILD: 1451 can't execute this_wont_work
+CHILD: 1452 forked with PARENT ID: 1413
+CHILD: 1452 can't execute this_wont_work
+CHILD: 1453 forked with PARENT ID: 1413
+CHILD: 1453 can't execute this_wont_work
+closh> 
+
+
+
