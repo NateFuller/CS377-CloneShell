@@ -34,8 +34,8 @@ char readChar() {
 	return c;
 }
 
-static void timeout_kill(int signo) {
-	printf("Signal called! Killing child: %d\n",child_pid);
+static void timeout_kill(int signo) { //signal handler for alarm, kills calling process
+	//printf("Signal called! Killing child: %d\n",child_pid);
     kill(child_pid,SIGKILL);
 }
 
@@ -49,7 +49,7 @@ int main() {
 	int timeout; // max seconds to run set of commands (parallel) or each command (sequentially)
 
 
-	signal(SIGALRM, (void (*)(int))timeout_kill);
+	signal(SIGALRM, (void (*)(int))timeout_kill); //sets up signal handler for when alarm goes off
 
 	while (TRUE) { // main shell input loop
 
@@ -82,55 +82,51 @@ int main() {
 
 		// just executes the given command once - REPLACE THIS CODE WITH YOUR OWN
 
-		int DEBUG = 1;
-		if (DEBUG) { // My code
-
-			if (parallel) { // handle concurrent execution
-				int i, j;
-				pid_t pids[count];
-				
-				for (i = 0; i < count; i++) {
-					pids[i] = fork();
-					if (pids[i] == 0) {
-						printf("CHILD: %d forked with PARENT ID: %d\n", getpid(), getppid());
-						alarm(timeout);
-						execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
-						printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
-						exit(1);
-					} else if (pids[i] < 0){ // err
-						fprintf(stderr, "ERR: Something went wrong while forking children.\n");
-						exit(1);
-					}
+		if (parallel) { // handle concurrent execution
+			int i, j;
+			pid_t pids[count]; //array that stores child pids
+			
+			for (i = 0; i < count; i++) {
+				pids[i] = fork();
+				if (pids[i] == 0) { //child process
+					//if its a child process set up alarm and try to execute the cmd
+					//if alarm goes off the child is terminated by the signal handler
+					printf("CHILD: %d forked with PARENT ID: %d\n", getpid(), getppid());
+					alarm(timeout);
+					execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
+					printf("CHILD: %d can't execute %s\n",getpid(), cmdTokens[0]); // only reached if running the program failed
+					exit(1);
+				} else if (pids[i] < 0){ // error when forking
+					fprintf(stderr, "ERR: Something went wrong while forking children.\n");
+					exit(1);
 				}
-				for (j = 0; j < count; j++) {
-					if (pids[j] > 0) {
-						waitpid(pids[j], NULL, 0);
-					}
-				}
-			} else { // handle sequential execution
-				int i;
-				//signal(SIGALRM, (void (*)(int))timeout_kill);
-				for (i = 0; i < count; i++) {
-					if ((child_pid = fork()) < 0) { // err
-						fprintf(stderr, "ERR: Something went wrong when forking.");
-						exit(1);
-					}
-					else if (child_pid == 0) { // have child process do work then exit immediately
-						execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
-						printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
-						exit(1);
-					} else { // wait for child to finish
-						alarm(timeout);
-						waitpid(-1, NULL, 0);
-					}
-				}
-				alarm(0);
 			}
-		} else { // Original code
-			execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
-			printf("Can't execute %s\n", cmdTokens[0]); // only reached if running the program failed
-			exit(1);
+			for (j = 0; j < count; j++) {
+				if (pids[j] > 0) { //parent process
+					waitpid(pids[j], NULL, 0);//waits for each child process to terminate, then reaps them
+				}
+			}
+		} else { // handle sequential execution
+			int i;
+			
+			for (i = 0; i < count; i++) {
+				if ((child_pid = fork()) < 0) { // error when forking
+					fprintf(stderr, "ERR: Something went wrong when forking.");
+					exit(1);
+				}
+				else if (child_pid == 0) { // have child process do work then exit immediately
+					printf("CHILD: %d forked with PARENT ID: %d\n", getpid(), getppid());
+					execvp(cmdTokens[0], cmdTokens); // replaces the current process with the given program
+					printf("CHILD: %d can't execute %s\n",getpid(), cmdTokens[0]); // only reached if running the program failed
+					exit(1);
+				} else { // wait for child to finish
+					alarm(timeout); //if the current child process exceeds the timeout, the signal handler is called to kill the process
+					waitpid(-1, NULL, 0); //waits for all child processes to terminate 
+				}
+			}
+			alarm(0); //resets the alarm 
 		}
-	}
+	} 
+	
 }
 
